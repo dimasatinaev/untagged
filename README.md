@@ -30,7 +30,7 @@ Amounts are formatted in the file's currency when a currency column is mapped. *
 
 ## Privacy by construction
 
-All parsing and analysis happens client-side. The page's Content-Security-Policy (`connect-src 'none'`) forbids network requests after load — verifiable in DevTools → Network. No signup, no upload, no analytics on your data.
+All parsing and analysis happens client-side. File analysis makes no outbound network requests: the application cannot transmit your CSV because its Content-Security-Policy enforces `connect-src 'none'` (shipped both as an in-page meta tag and as a real HTTP header via `public/_headers`). Verifiable in DevTools → Network; auditable in this repository. Hosting-level headers added by the CDN (e.g. network-error logging) exist on any site and never contain user data. No signup, no upload, no analytics.
 
 ## Fonts (self-hosted)
 
@@ -79,9 +79,9 @@ The CSP's `connect-src 'none'` is the enforceable form of the privacy promise: t
 
 ## Status and limitations
 
-Public beta candidate: engine, full flow (upload → mapping → report → explorer), landing page, methodology page, animated hero, light/dark themes.
+**Public beta** — live at https://untagged.pages.dev/
 
-Known limitations: the resource explorer retains the top 5,000 resources by cost (disclosed on screen when truncated); mixed currencies are refused rather than converted; results are estimates — verify before financial reporting. Remaining pre-launch: replace the red PLACEHOLDER repository/production URLs (in `src/App.tsx`, `src/ui/UploadScreen.tsx`, `src/ui/MethodPage.tsx`, `index.html`), then create the initial commit once `npm ci && npm test && npm run build` pass.
+Known limitations: the resource explorer retains the top 5,000 resources by cost (disclosed on screen when truncated); mixed currencies are refused rather than converted; results are estimates — verify before financial reporting. Found a format that doesn't map? Open an issue with your CSV's header row.
 
 ## License
 

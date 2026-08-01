@@ -66,6 +66,7 @@ export function generateDemoCsv(rowCount = 200): string {
     'cloud_provider',
     'region',
     'monthly_cost',
+    'currency',
     'owner',
     'team',
     'env',
@@ -120,6 +121,7 @@ export function generateDemoCsv(rowCount = 200): string {
       svc.provider,
       pick(svc.regions),
       String(cost),
+      'USD',
       owner,
       teamValue,
       envA,
@@ -130,12 +132,12 @@ export function generateDemoCsv(rowCount = 200): string {
 
   // engineered extras:
   // one fat fully-untagged offender (top of the fix list)
-  rows.push(['i-0deadbeef', 'EC2', 'aws', 'us-east-1', '2450.00', '', '', '', '', '']);
+  rows.push(['i-0deadbeef', 'EC2', 'aws', 'us-east-1', '2450.00', 'USD', '', '', '', '', '']);
   // an account-level credit line (no resource id — stays unattached)
-  rows.push(['', 'EC2', 'aws', 'us-east-1', '-1200.00', '', '', '', '', '']);
+  rows.push(['', 'EC2', 'aws', 'us-east-1', '-1200.00', 'USD', '', '', '', '', '']);
   // duplicate resource id (dedup demo)
-  rows.push(['db-shared-01', 'RDS', 'aws', 'eu-central-1', '410.00', 'anna.k', 'payments', 'prod', '', 'CC-1042']);
-  rows.push(['db-shared-01', 'RDS', 'aws', 'eu-central-1', '395.00', 'anna.k', 'payments', 'prod', '', 'CC-1042']);
+  rows.push(['db-shared-01', 'RDS', 'aws', 'eu-central-1', '410.00', 'USD', 'anna.k', 'payments', 'prod', '', 'CC-1042']);
+  rows.push(['db-shared-01', 'RDS', 'aws', 'eu-central-1', '395.00', 'USD', 'anna.k', 'payments', 'prod', '', 'CC-1042']);
 
   for (const r of rows) lines.push(r.map(csvEscape).join(','));
   return lines.join('\n');

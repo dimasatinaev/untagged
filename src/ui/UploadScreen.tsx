@@ -112,9 +112,10 @@ export default function UploadScreen({ onCsv, onDemo, onMethod, onError, error }
           </>
         )}
         <div className="dropzone-privacy">
-          <strong>Your data never leaves this page.</strong> The file is parsed in your browser; this site
-          makes no network requests after loading (enforced by its Content-Security-Policy — check DevTools
-          → Network if you like). No signup, no upload, no tracking of your data.
+          <strong>Your data never leaves this page.</strong> The file is parsed in your browser. File
+          analysis makes no outbound network requests — the application cannot transmit your CSV because its
+          Content-Security-Policy enforces <code>connect-src 'none'</code> (verify in DevTools → Network).
+          No signup, no upload, no tracking of your data.
         </div>
       </div>
 
@@ -142,9 +143,9 @@ export default function UploadScreen({ onCsv, onDemo, onMethod, onError, error }
           <span className="how-step__num">2</span>
           <h3>Analyzed in your browser</h3>
           <p>
-            The file is never uploaded. This page makes no network requests after it loads — enforced by its
-            Content-Security-Policy, verifiable in DevTools → Network, auditable in the open source. Your
-            billing data stays yours.
+            The file is never uploaded. File analysis makes no outbound network requests — the application
+            cannot transmit your CSV because its Content-Security-Policy enforces connect-src 'none'.
+            Verifiable in DevTools → Network, auditable in the open source.
           </p>
         </div>
         <div className="how-step reveal">

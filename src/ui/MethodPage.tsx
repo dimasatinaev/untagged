@@ -111,9 +111,12 @@ export default function MethodPage({ onBack }: Props) {
 
         <h3>Privacy, verifiably</h3>
         <p>
-          Analysis runs entirely in your browser. The page's Content-Security-Policy (<code>connect-src
-          'none'</code>) forbids network requests after load — open DevTools → Network while you use the
-          tool and watch nothing happen. The source is public, so the claim is auditable, not just asserted.
+          Analysis runs entirely in your browser. File analysis makes no outbound network requests: the
+          application cannot transmit your CSV because its Content-Security-Policy enforces{' '}
+          <code>connect-src 'none'</code> — open DevTools → Network while you analyze a file and watch
+          nothing happen. (Hosting-level headers from the CDN, such as network-error logging, exist on any
+          site and never contain your data.) The source is public, so the claim is auditable, not just
+          asserted.
         </p>
 
         <h3>Limitations, honestly</h3>
