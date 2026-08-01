@@ -1,0 +1,13 @@
+resource_id,service,monthly_cost,owner,team,env,cost_center
+i-0good001,EC2,412.50,anna.k,payments,prod,CC-1042
+i-0good002,EC2,218.00,marek.v,payments,prod,CC-1042
+this row has only,two fields
+i-0good003,RDS,696.00,lucie.h,payments,production,CC-1042
+too,many,fields,in,this,row,should,be,skipped,entirely
+i-0good004,S3,67.20,,search,prod,CC-1043
+just-one-field-no-commas-at-all
+i-0good005,Lambda,12.40,eva.s,search,,CC-1043
+i-0good006,EC2,oops-not-a-number,petr.n,data-platform,dev,CC-2077
+i-0good007,BigQuery,1604.00,jana.d,data-platform,prod,
+trailing,comma,row,with,wrong,count,
+i-0good008,EC2,53.30,,,,

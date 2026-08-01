@@ -1,0 +1,16 @@
+# dependencies / build
+node_modules/
+dist/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# local-only: pre-design-pass snapshot
+.backup-pre-design-pass/
+
+# local-only: large real-world test datasets (Microsoft dataset examples, ~700MB)
+# the committed fixtures in samples/*.csv are enough for the test suite
+samples/Microsoft dataset-examples/

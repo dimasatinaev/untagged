@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Privacy by construction: no external connections allowed after load.
+         Mirrored as real HTTP headers in public/_headers for the deployed site. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'"
+    />
+    <title>Untagged — cloud cost allocation readiness auditor</title>
+    <meta
+      name="description"
+      content="Find the cloud spend missing required allocation tags. Drop a cost CSV, get your allocation readiness score, unallocated spend, and a fix-list. Free, client-side — nothing is uploaded."
+    />
+    <meta name="theme-color" content="#0a0b0f" />
+    <link rel="icon" type="image/svg+xml" href="/Untagged.svg" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/Untagged.png" />
+    <link rel="apple-touch-icon" href="/Untagged.png" />
+
+    <!-- PLACEHOLDER: replace https://untagged.PLACEHOLDER.dev with the final production URL -->
+    <link rel="canonical" href="https://untagged.PLACEHOLDER.dev/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Untagged — cloud cost allocation readiness auditor" />
+    <meta
+      property="og:description"
+      content="Find the cloud spend missing required allocation tags. Free, client-side — your CSV never leaves the browser."
+    />
+    <meta property="og:url" content="https://untagged.PLACEHOLDER.dev/" />
+    <meta property="og:image" content="https://untagged.PLACEHOLDER.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Untagged — cloud cost allocation readiness auditor" />
+    <meta
+      name="twitter:description"
+      content="Find the cloud spend missing required allocation tags. Free, client-side — your CSV never leaves the browser."
+    />
+    <meta name="twitter:image" content="https://untagged.PLACEHOLDER.dev/og.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

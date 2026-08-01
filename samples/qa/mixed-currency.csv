@@ -1,0 +1,7 @@
+resource_id,service,monthly_cost,currency,owner,team,env,cost_center
+i-0aaa111,EC2,412.50,USD,anna.k,payments,prod,CC-1042
+i-0bbb222,EC2,218.00,USD,marek.v,payments,prod,CC-1042
+vm-ccc333,Virtual Machines,540.44,EUR,eva.s,search,prod,CC-1043
+sqldb-ddd444,Azure SQL,772.99,EUR,tomas.b,search,staging,CC-1043
+gce-eee555,Compute Engine,318.25,GBP,petr.n,data-platform,dev,CC-2077
+bucket-fff666,S3,67.20,USD,,payments,prod,
