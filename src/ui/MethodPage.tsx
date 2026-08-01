@@ -22,13 +22,8 @@ export default function MethodPage({ onBack }: Props) {
             FinOps Foundation untagged-cost KPI playbook
           </a>{' '}
           and extended for mandatory-tag policy compliance — every judgment call documented below.{' '}
-          <a
-            href="https://github.com/PLACEHOLDER/untagged"
-            target="_blank"
-            rel="noreferrer"
-            className="placeholder-link"
-          >
-            View source (PLACEHOLDER)
+          <a href="https://github.com/dimasatinaev/untagged" target="_blank" rel="noreferrer">
+            View source
           </a>
         </p>
       </div>

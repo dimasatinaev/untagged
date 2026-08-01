@@ -2,6 +2,7 @@
 node_modules/
 dist/
 *.log
+*.tsbuildinfo
 
 # OS / editor
 .DS_Store

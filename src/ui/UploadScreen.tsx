@@ -164,13 +164,8 @@ export default function UploadScreen({ onCsv, onDemo, onMethod, onError, error }
           Read how the scoring works →
         </button>{' '}
         ·{' '}
-        <a
-          href="https://github.com/PLACEHOLDER/untagged"
-          target="_blank"
-          rel="noreferrer"
-          className="placeholder-link"
-        >
-          View source (PLACEHOLDER)
+        <a href="https://github.com/dimasatinaev/untagged" target="_blank" rel="noreferrer" className="linklike">
+          View source
         </a>
       </p>
     </section>

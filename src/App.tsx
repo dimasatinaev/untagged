@@ -29,8 +29,7 @@ export interface Session {
 
 const SAMPLE_ROWS = 500;
 
-/** PLACEHOLDER — replace with the real public repository URL before launch */
-export const REPO_URL = 'https://github.com/PLACEHOLDER/untagged';
+export const REPO_URL = 'https://github.com/dimasatinaev/untagged';
 
 type Theme = 'dark' | 'light';
 
@@ -209,8 +208,8 @@ export default function App() {
             open methodology
           </button>{' '}
           informed by the FinOps Foundation untagged-cost KPI playbook ·{' '}
-          <a href={REPO_URL} target="_blank" rel="noreferrer" className="placeholder-link">
-            view source (PLACEHOLDER)
+          <a href={REPO_URL} target="_blank" rel="noreferrer">
+            view source
           </a>{' '}
           · free to use
         </span>
