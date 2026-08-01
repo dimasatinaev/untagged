@@ -1,0 +1,43 @@
+name: Bug report
+description: Something broke or behaved unexpectedly
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not upload a real billing export.** Reproduce with the built-in demo data or a
+        sanitized file (the `samples/` and `samples/qa/` folders in this repo are safe to reference).
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data safety
+      options:
+        - label: The reproduction uses demo data or sanitized data only
+          required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the demo data / drop file X
+        2. Map columns as…
+        3. Click Analyze
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected and actual outcome
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console error, if any
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: Browser / OS / theme
+      placeholder: "e.g. Firefox 139, Windows 11, light mode"

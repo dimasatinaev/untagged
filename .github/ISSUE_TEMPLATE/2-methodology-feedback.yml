@@ -1,0 +1,48 @@
+name: Methodology feedback
+description: Disagree with or want to improve a scoring decision
+title: "[method] "
+labels: ["methodology"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every scoring decision is documented on the method page (linked from the site footer).
+        Critique is welcome — the goal is a score practitioners can defend.
+        **Do not include real billing data or confidential organizational details.**
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data safety
+      options:
+        - label: This issue contains no real billing data or confidential information
+          required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which scoring decision is affected?
+      options:
+        - Cost-weighted headline score
+        - Null-token handling ("n/a" counts as missing)
+        - Line-item aggregation into resources
+        - Untaggable charge exclusion (tax/credits/fees)
+        - Negative line-item netting
+        - Drift detection
+        - Solo-recoverable spend
+        - Grade bands
+        - Currency handling
+        - Default mandatory tags
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected interpretation
+      description: What should the metric mean or do instead, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Relevant public reference or organizational practice
+      placeholder: "e.g. FinOps Foundation playbook section, FOCUS spec, common practice at orgs you've seen"

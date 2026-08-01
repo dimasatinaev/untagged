@@ -1,0 +1,50 @@
+name: Export compatibility
+description: A CSV export that Untagged doesn't detect or map correctly
+title: "[compat] "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not upload a real billing export or confidential resource data.**
+        Share only the header row, or a minimal sanitized reproduction with identifiers removed
+        (fake resource ids, fake tag values — the *column structure* is what matters).
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data safety
+      options:
+        - label: This issue contains no real billing data, account identifiers, or confidential tag values
+          required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider and export type
+      placeholder: "e.g. AWS Cost Explorer monthly CSV, Azure Cost Management MCA export, GCP billing export"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Export version / date, if known
+      placeholder: "e.g. CUR 2.0, exported 2026-07"
+  - type: textarea
+    id: headers
+    attributes:
+      label: Sanitized header row
+      description: Paste the first line of the CSV (column names only — no data rows unless sanitized)
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: mapping
+    attributes:
+      label: Detected mapping vs expected mapping
+      placeholder: "e.g. Cost mapped to — none —, expected UsageCostInAccountCurrency; environment tag not found"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Browser and approximate file size
+      placeholder: "e.g. Chrome 132 on macOS, ~80 MB"
