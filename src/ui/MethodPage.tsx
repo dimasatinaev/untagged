@@ -35,9 +35,10 @@ export default function MethodPage({ onBack }: Props) {
           spend sitting on resources that carry a real value for <em>every</em> tracked mandatory tag. It is
           stricter than the FinOps Foundation's base untagged-cost KPI, which measures resources missing at
           least one tag — Untagged evaluates compliance with your full selected tag policy. The A–F grade
-          bands are Untagged conventions for readability, not official FinOps Foundation grades. The default
-          mandatory tags (owner, team, environment, cost center) are common examples, not an industry
-          standard — adjust them to your organization's policy on the mapping screen.
+          bands are Untagged conventions for readability, not official FinOps Foundation grades. The four
+          built-in dimensions (owner, team, environment, cost center) are common examples, not an industry
+          standard — each can be remapped to any CSV column or disabled on the mapping screen; user-defined
+          policy dimensions are not yet supported.
         </p>
 
         <h3>The headline score is cost-weighted</h3>

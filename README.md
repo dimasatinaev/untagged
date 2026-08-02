@@ -30,7 +30,7 @@ Amounts are formatted in the file's currency when a currency column is mapped. *
 
 ## Privacy by construction
 
-All parsing and analysis happens client-side. File analysis makes no outbound network requests: the application cannot transmit your CSV because its Content-Security-Policy enforces `connect-src 'none'` (shipped both as an in-page meta tag and as a real HTTP header via `public/_headers`). Verifiable in DevTools → Network; auditable in this repository. Hosting-level headers added by the CDN (e.g. network-error logging) exist on any site and never contain user data. No signup, no upload, no analytics.
+All parsing and analysis happens client-side. File analysis makes no outbound network requests: the application cannot transmit your CSV because its Content-Security-Policy enforces `connect-src 'none'` (shipped both as an in-page meta tag and as a real HTTP header via `public/_headers`). Verifiable in DevTools → Network; auditable in this repository. Hosting-level headers added by the CDN (e.g. network-error logging) exist on any site and never contain user data; the host also keeps normal request logs, as any host does. No signup, no upload, no client-side analytics, tracking pixels or analytics beacons.
 
 ## Fonts (self-hosted)
 
