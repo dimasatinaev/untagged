@@ -8,7 +8,7 @@ import type {
   TagPolicy,
 } from './types.ts';
 import { parseCost, streamCsv } from './csv.ts';
-import { gradeForScore, isNullToken } from './policy.ts';
+import { gradeForScore, isNullToken, normalizeValue } from './policy.ts';
 import { parseTagObject, isUntaggableChargeType } from './detect.ts';
 import { detectKeyDrift, detectValueDrift } from './drift.ts';
 
@@ -20,12 +20,13 @@ export interface AnalyzeOptions {
 }
 
 /**
- * Core analysis per PRD §5, aggregation model:
+ * Core analysis, aggregation model:
  * - Billing exports contain one line item per resource per day/meter — the
  *   same resource id legitimately appears many times. Costs are SUMMED per
  *   resource; tags fill in from the first line item with a real value.
- * - Cost-weighted coverage (headline): % of positive spend on resources that
- *   have real values for ALL mandatory tags.
+ * - Two independent coverage views, never combined: cost-weighted (% of
+ *   positive spend on resources having real values for ALL enabled mandatory
+ *   tags) and resource-count (% of resources meeting the same bar).
  * - Credits (negative line items) are excluded from coverage math, counted
  *   separately. Null tokens ("n/a", "-", "NULL"...) count as missing.
  * - Row access is index-based and streaming-friendly: memory holds only the
@@ -144,22 +145,31 @@ function createAggregator(
 
     // tags: JSON column first, explicit columns override; a real value never
     // gets overwritten by a null token from a later line item
+    // tag resolution across a resource's line items:
+    // 1. a real value always wins and is never overwritten by a placeholder
+    // 2. otherwise the first placeholder seen is retained, so the report can
+    //    show which placeholder text is in use (it still counts as missing)
+    const setTag = (canonical: string, raw: string) => {
+      const cur = res!.tags[canonical];
+      if (!isNullToken(cur, policy)) return; // real value already held
+      if (!isNullToken(raw, policy)) {
+        res!.tags[canonical] = raw;
+      } else if (normalizeValue(cur) === '' && normalizeValue(raw) !== '') {
+        res!.tags[canonical] = raw; // remember the placeholder for reporting
+      }
+    };
+
     if (iJson >= 0 && jsonTagEntries.length > 0) {
       const obj = parseTagObject(row[iJson] ?? '');
       if (obj) {
         for (const [canonical, jsonKey] of jsonTagEntries) {
           const v = obj[jsonKey];
-          if (v !== undefined && v !== null && isNullToken(res.tags[canonical], policy)) {
-            res.tags[canonical] = String(v);
-          }
+          if (v !== undefined && v !== null) setTag(canonical, String(v));
         }
       }
     }
     for (const [canonical, ci] of tagCols) {
-      const v = row[ci] ?? '';
-      if (!isNullToken(v, policy) && isNullToken(res.tags[canonical], policy)) {
-        res.tags[canonical] = v;
-      }
+      setTag(canonical, row[ci] ?? '');
     }
   };
 
@@ -207,6 +217,33 @@ function createAggregator(
     const costWeightedScore = hasCost && totalCost > 0 ? pct(compliantCost, totalCost) : null;
     const unallocatedCost = hasCost ? round2(totalCost - compliantCost) : 0;
 
+    // placeholder tally: values like "n/a"/"unknown" sitting in ENABLED policy
+    // dimensions. Genuinely empty cells are excluded — they are missing, not
+    // misleading. Counted per (resource, tag) pair; resource counts deduped.
+    const placeholderOcc = new Map<string, { occurrences: number; resources: Set<string> }>();
+    const placeholderPerTag = new Map<string, number>();
+    // exact union of affected resources across ALL placeholder values —
+    // a per-value maximum would undercount disjoint resources
+    const placeholderResources = new Set<string>();
+    let placeholderOccurrenceCount = 0;
+    for (const r of resources) {
+      for (const t of mandatory) {
+        const raw = r.tags[t.key];
+        const norm = normalizeValue(raw);
+        if (norm === '' || !isNullToken(raw, policy)) continue;
+        const entry = placeholderOcc.get(norm) ?? { occurrences: 0, resources: new Set<string>() };
+        entry.occurrences++;
+        entry.resources.add(r.id);
+        placeholderOcc.set(norm, entry);
+        placeholderPerTag.set(t.key, (placeholderPerTag.get(t.key) ?? 0) + 1);
+        placeholderResources.add(r.id);
+        placeholderOccurrenceCount++;
+      }
+    }
+    const placeholders = [...placeholderOcc.entries()]
+      .map(([value, v]) => ({ value, occurrences: v.occurrences, resources: v.resources.size }))
+      .sort((a, b) => b.occurrences - a.occurrences || a.value.localeCompare(b.value));
+
     // per-resource missing sets, reused for solo-recoverable computation
     const missingByResource = resources.map((r) => mandatory.filter((t) => isMissing(r, t.key)));
     const soloCost = new Map<string, number>();
@@ -226,6 +263,7 @@ function createAggregator(
         resourcePct: pct(withValue.length, resources.length),
         costPct: hasCost && totalCost > 0 ? pct(withValueCost, totalCost) : null,
         missingCount: resources.length - withValue.length,
+        placeholderCount: placeholderPerTag.get(t.key) ?? 0,
         soloRecoverableCost: hasCost ? round2(soloCost.get(t.key) ?? 0) : null,
       };
     });
@@ -262,8 +300,6 @@ function createAggregator(
       .map((s) => ({ ...s, totalCost: round2(s.totalCost), unallocatedCost: round2(s.unallocatedCost) }))
       .sort((a, b) => b.unallocatedCost - a.unallocatedCost);
 
-    const headline = costWeightedScore ?? resourceCountScore;
-
     const resourcesLimit = options.resourcesLimit ?? 5000;
     const sortedResources = [...resources].sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0));
 
@@ -272,7 +308,14 @@ function createAggregator(
       analyzedResources: resources.length,
       costWeightedScore,
       resourceCountScore,
-      grade: gradeForScore(headline),
+      // graded independently — never averaged, capped, or combined
+      spendGrade: costWeightedScore === null ? null : gradeForScore(costWeightedScore),
+      resourceGrade: gradeForScore(resourceCountScore),
+      compliantResourceCount: compliantCount,
+      nonCompliantResourceCount: resources.length - compliantCount,
+      placeholders,
+      placeholderOccurrenceCount,
+      placeholderResourceCount: placeholderResources.size,
       perTag,
       totalCost: round2(totalCost),
       unallocatedCost,

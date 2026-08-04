@@ -84,10 +84,28 @@ export function gradeForScore(score: number): Grade {
   return 'F';
 }
 
-export const GRADE_LABELS: Record<Grade, string> = {
+/**
+ * Spend allocation and resource compliance answer different questions and are
+ * graded INDEPENDENTLY — no average, no minimum, no capping, no composite
+ * "overall" grade. Grade bands and the divergence threshold below are Untagged
+ * presentation conventions, not FinOps Foundation standards.
+ */
+export const SPEND_GRADE_LABELS: Record<Grade, string> = {
   A: 'Allocation-ready',
-  B: 'Minor gaps',
+  B: 'Minor unallocated spend',
   C: 'Material unallocated spend',
   D: 'Allocation at risk',
-  F: 'Flying blind',
+  F: 'Mostly unallocated',
 };
+
+export const RESOURCE_GRADE_LABELS: Record<Grade, string> = {
+  A: 'Strong policy compliance',
+  B: 'Minor compliance gaps',
+  C: 'Material compliance gaps',
+  D: 'Low policy compliance',
+  F: 'Widespread non-compliance',
+};
+
+/** percentage-point gap at which the two coverage views are called out as
+ * diverging. Untagged presentation convention, not a Foundation standard. */
+export const DIVERGENCE_THRESHOLD_POINTS = 15;

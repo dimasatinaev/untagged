@@ -1,3 +1,5 @@
+import { DIVERGENCE_THRESHOLD_POINTS } from '../engine/policy.ts';
+
 interface Props {
   onBack: () => void;
 }
@@ -29,32 +31,48 @@ export default function MethodPage({ onBack }: Props) {
       </div>
 
       <div className="method-body">
-        <h3>What the headline score is — and is not</h3>
+        <h3>Two grades, never combined</h3>
         <p>
-          The headline number is Untagged's <em>allocation readiness</em> metric: the percentage of taggable
-          spend sitting on resources that carry a real value for <em>every</em> tracked mandatory tag. It is
-          stricter than the FinOps Foundation's base untagged-cost KPI, which measures resources missing at
-          least one tag — Untagged evaluates compliance with your full selected tag policy. The A–F grade
-          bands are Untagged conventions for readability, not official FinOps Foundation grades. The four
-          built-in dimensions (owner, team, environment, cost center) are common examples, not an industry
-          standard — each can be remapped to any CSV column or disabled on the mapping screen; user-defined
-          policy dimensions are not yet supported.
+          Untagged reports <em>two independent grades</em>, because spend allocation and resource compliance
+          answer different questions and neither substitutes for the other:
+        </p>
+        <p>
+          <strong>Spend allocation</strong> answers "how much spend is allocatable?" — the percentage of
+          taggable spend on resources that carry a real value for every enabled mandatory tag.{' '}
+          <strong>Resource compliance</strong> answers "how much of the resource inventory follows the
+          selected policy?" — the percentage of analyzed resources meeting the same bar.
+        </p>
+        <p>
+          They are graded separately using the same thresholds (A ≥95%, B ≥85%, C ≥70%, D ≥50%, F below
+          50%). There is deliberately no average, no minimum, no capping of one by the other, and no
+          composite "overall" grade: a single figure can hide the truth in either direction. Both
+          measurements are stricter than the FinOps Foundation's base untagged-cost KPI, which counts
+          resources missing at least one tag — Untagged evaluates compliance with the complete enabled
+          policy. The A–F bands are Untagged conventions for readability, not official FinOps Foundation
+          grades. The four built-in dimensions (owner, team, environment, cost center) are common examples,
+          not an industry standard — each can be remapped to any CSV column or disabled on the mapping
+          screen; user-defined policy dimensions are not yet supported.
         </p>
 
-        <h3>The headline score is cost-weighted</h3>
+        <h3>Why the two can diverge</h3>
         <p>
-          The score is the percentage of <em>spend</em> sitting on compliant resources — not the percentage
-          of resources. Allocation is about money: a 2,450/month untagged instance is a bigger problem than
-          forty untagged 0.02 buckets. Both numbers are always shown (engineers fix resources; finance
-          allocates spend), but the cost-weighted figure leads.
+          Cloud spend is usually concentrated: a handful of resources can carry most of the bill. If those
+          few are tagged, spend allocation looks excellent while most of the inventory is still unowned —
+          and the reverse happens when a small number of expensive resources are untagged. When the two
+          scores differ by at least {DIVERGENCE_THRESHOLD_POINTS} percentage points, the report says so
+          explicitly and names the direction. That threshold is an Untagged presentation convention, not a
+          Foundation standard.
         </p>
 
         <h3>"n/a" is not a tag</h3>
         <p>
           A tag counts as missing when its value is empty or a null token: <code>n/a</code>, <code>na</code>,{' '}
           <code>none</code>, <code>null</code>, <code>-</code>, <code>unknown</code>, <code>tbd</code> and
-          similar. People fill mandatory fields with placeholders to get past forms; counting those as
-          "tagged" would flatter the score without making the spend allocatable.
+          similar (case and surrounding whitespace are ignored). People fill mandatory fields with
+          placeholders to get past forms — and IaC modules do it by default — so counting those as "tagged"
+          would flatter the score without making the spend allocatable. The report lists which placeholder
+          values it found and how often, so the practice is visible rather than silently absorbed. A
+          resource keeps a real value found on any of its line items; a placeholder never overwrites one.
         </p>
 
         <h3>Line items are aggregated into resources</h3>

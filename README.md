@@ -4,7 +4,8 @@
 
 Find the cloud spend missing required allocation tags. Drop in a cost export and get:
 
-- An **allocation readiness score and grade** — cost-weighted (% of taggable spend fully allocatable) and resource-count
+- **Two independent grades** — *spend allocation* (% of taggable spend fully allocatable) and *resource compliance* (% of resources satisfying the complete tag policy). They answer different questions and are never averaged, capped, or merged into an overall grade; when they diverge by 15+ points the report says why
+- A **placeholder-value summary** — `n/a`, `unknown`, `-` and similar are treated as missing and listed explicitly, so dummy IaC defaults are visible rather than silently absorbed
 - **Unallocated spend** estimate, per service, with a spend-composition breakdown
 - **Per-tag coverage** for your tracked mandatory tags, including solo-recoverable spend per tag
 - **Tag drift detection** — `env` vs `Environment` columns, `prod` vs `production` values, token-order and typo variants

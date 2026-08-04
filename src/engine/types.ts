@@ -75,6 +75,8 @@ export interface TagCoverage {
   /** % of cost carried by resources with a real value, 0..100; null when no cost data */
   costPct: number | null;
   missingCount: number;
+  /** of the missing ones, how many hold a placeholder value rather than nothing */
+  placeholderCount: number;
   /** spend recovered by fixing ONLY this tag (resources where it is the single
    * missing mandatory tag); null when no cost data */
   soloRecoverableCost: number | null;
@@ -91,15 +93,41 @@ export interface DriftFinding {
 
 export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 
+export interface PlaceholderFinding {
+  /** normalized placeholder text as found, e.g. "n/a" */
+  value: string;
+  /** number of (resource, mandatory tag) pairs holding this placeholder */
+  occurrences: number;
+  /** number of distinct resources affected */
+  resources: number;
+}
+
 export interface AnalysisResult {
   totalResources: number;
   /** resources considered in coverage math (after credit/dedup exclusions) */
   analyzedResources: number;
-  /** % of cost on fully-tagged resources; null when no usable cost data */
+  /** % of taggable spend on resources satisfying EVERY enabled mandatory tag;
+   * null when no usable cost data */
   costWeightedScore: number | null;
-  /** % of resources fully tagged */
+  /** % of analyzed resources satisfying EVERY enabled mandatory tag */
   resourceCountScore: number;
-  grade: Grade;
+  /** graded from costWeightedScore; null when there is no usable cost data.
+   * Independent of resourceGrade — never averaged, capped, or combined. */
+  spendGrade: Grade | null;
+  /** graded from resourceCountScore. Independent of spendGrade. */
+  resourceGrade: Grade;
+  /** resources satisfying every enabled mandatory tag */
+  compliantResourceCount: number;
+  /** resources missing at least one enabled mandatory tag */
+  nonCompliantResourceCount: number;
+  /** placeholder values ("n/a", "unknown", …) found in enabled policy
+   * dimensions and treated as missing; genuinely empty cells excluded */
+  placeholders: PlaceholderFinding[];
+  /** total (resource, tag) pairs holding a placeholder */
+  placeholderOccurrenceCount: number;
+  /** exact union of distinct resources holding at least one placeholder —
+   * not the max across placeholder values */
+  placeholderResourceCount: number;
   perTag: TagCoverage[];
   totalCost: number;
   unallocatedCost: number;

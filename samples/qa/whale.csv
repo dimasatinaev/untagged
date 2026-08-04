@@ -1,0 +1,6 @@
+resource_id,service,monthly_cost,currency,owner,team,env,cost_center
+db-prod-orders,RDS,4500.00,USD,anna.k,payments,prod,CC-1042
+bucket-analytics,S3,50.00,USD,eva.s,search,prod,CC-1043
+i-0dummy001,EC2,100.00,USD,N/A,unknown,prod,CC-1042
+i-0untagged01,EC2,50.00,USD,,,,
+i-0untagged02,EC2,50.00,USD,,,,

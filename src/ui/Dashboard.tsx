@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import type { Session } from '../App.tsx';
 import type { AnalysisResult } from '../engine/types.ts';
-import { GRADE_LABELS, DEFAULT_POLICY, isNullToken } from '../engine/policy.ts';
+import {
+  SPEND_GRADE_LABELS,
+  RESOURCE_GRADE_LABELS,
+  DIVERGENCE_THRESHOLD_POINTS,
+  DEFAULT_POLICY,
+  isNullToken,
+} from '../engine/policy.ts';
 import { makeMoneyContext, type MoneyContext } from './money.ts';
 
 interface Props {
@@ -31,9 +37,12 @@ function displayId(id: string): string {
 export default function Dashboard({ session, result, onBack, onReset, onExplore }: Props) {
   const [copied, setCopied] = useState(false);
   const r = result;
-  const headlineScore = r.costWeightedScore ?? r.resourceCountScore;
   const countOnly = r.costWeightedScore === null;
   const money = makeMoneyContext(r.currencies);
+  const divergence =
+    r.costWeightedScore !== null && Math.abs(r.costWeightedScore - r.resourceCountScore) >= DIVERGENCE_THRESHOLD_POINTS
+      ? { spendHigher: r.costWeightedScore > r.resourceCountScore }
+      : null;
 
   async function copyMarkdown() {
     const md = buildMarkdown(session.fileName, r, money);
@@ -59,33 +68,73 @@ export default function Dashboard({ session, result, onBack, onReset, onExplore 
         </p>
       </div>
 
-      {/* score card */}
-      <div className="score-card" data-grade={r.grade}>
-        <div className="score-card__grade">
-          <span className="grade-letter">{r.grade}</span>
-          <span className="grade-label">{GRADE_LABELS[r.grade]}</span>
-        </div>
-        <div className="score-card__metrics">
-          <div className="metric metric--big">
-            <span className="metric-value">{headlineScore.toFixed(1)}%</span>
-            <span className="metric-label">
-              {countOnly ? 'resources fully tagged (no cost data)' : 'of spend is fully allocatable'}
-            </span>
+      {/* two independent grades — spend allocation and resource compliance
+          answer different questions and are never combined */}
+      <div className={'grade-pair' + (countOnly ? ' grade-pair--single' : '')}>
+        {!countOnly && r.spendGrade && (
+          <div className="score-card" data-grade={r.spendGrade}>
+            <h3 className="score-card__title">Spend allocation</h3>
+            <div className="score-card__body">
+              <div className="score-card__grade">
+                <span className="grade-letter">{r.spendGrade}</span>
+                <span className="grade-label">{SPEND_GRADE_LABELS[r.spendGrade]}</span>
+              </div>
+              <div className="score-card__metrics">
+                <div className="metric metric--big">
+                  <span className="metric-value">{r.costWeightedScore!.toFixed(1)}%</span>
+                  <span className="metric-label">of taggable spend is fully allocatable</span>
+                </div>
+                <div className="metric metric--alert">
+                  <span className="metric-value">{money.fmt(r.unallocatedCost)}</span>
+                  <span className="metric-label">unallocated (of {money.fmt(r.totalCost)} taggable)</span>
+                </div>
+              </div>
+            </div>
           </div>
-          {!countOnly && (
-            <div className="metric">
-              <span className="metric-value">{r.resourceCountScore.toFixed(1)}%</span>
-              <span className="metric-label">of resources fully tagged</span>
+        )}
+
+        <div className="score-card" data-grade={r.resourceGrade}>
+          <h3 className="score-card__title">Resource compliance</h3>
+          <div className="score-card__body">
+            <div className="score-card__grade">
+              <span className="grade-letter">{r.resourceGrade}</span>
+              <span className="grade-label">{RESOURCE_GRADE_LABELS[r.resourceGrade]}</span>
             </div>
-          )}
-          {!countOnly && (
-            <div className="metric metric--alert">
-              <span className="metric-value">{money.fmt(r.unallocatedCost)}</span>
-              <span className="metric-label">unallocated spend (of {money.fmt(r.totalCost)})</span>
+            <div className="score-card__metrics">
+              <div className="metric metric--big">
+                <span className="metric-value">{r.resourceCountScore.toFixed(1)}%</span>
+                <span className="metric-label">
+                  {r.compliantResourceCount.toLocaleString()} of {r.analyzedResources.toLocaleString()}{' '}
+                  resources satisfy the complete tag policy
+                </span>
+              </div>
+              <div className="metric metric--alert">
+                <span className="metric-value">{r.nonCompliantResourceCount.toLocaleString()}</span>
+                <span className="metric-label">non-compliant resources</span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
+
+      {divergence && (
+        <p className="divergence" role="note">
+          <strong>Coverage divergence:</strong>{' '}
+          {divergence.spendHigher ? (
+            <>
+              {r.costWeightedScore!.toFixed(1)}% of spend is allocatable, but only{' '}
+              {r.resourceCountScore.toFixed(1)}% of resources comply. A small number of costly compliant
+              resources may be masking broader tagging gaps.
+            </>
+          ) : (
+            <>
+              {r.resourceCountScore.toFixed(1)}% of resources comply, but only{' '}
+              {r.costWeightedScore!.toFixed(1)}% of spend is allocatable. A smaller number of costly
+              non-compliant resources is driving the allocation gap.
+            </>
+          )}
+        </p>
+      )}
 
       {/* data quality notes */}
       <DataQualityNotes r={r} skipped={session.skippedRows ?? 0} money={money} />
@@ -97,19 +146,34 @@ export default function Dashboard({ session, result, onBack, onReset, onExplore 
         {/* per-tag coverage */}
         <div className="card">
           <h3>Coverage per mandatory tag</h3>
+          {!countOnly && (
+            <div className="bar-legend">
+              <span className="bar-legend__item">
+                <span className="bar-legend__swatch bar-legend__swatch--spend" />
+                Spend coverage
+              </span>
+              <span className="bar-legend__item">
+                <span className="bar-legend__swatch bar-legend__swatch--resources" />
+                Resource coverage
+              </span>
+            </div>
+          )}
           {r.perTag.map((t) => (
             <div key={t.key} className="tagbar">
               <div className="tagbar__head">
                 <span>{t.label}</span>
-                <span>
-                  {(t.costPct ?? t.resourcePct).toFixed(1)}%{' '}
-                  <em className="hint">({t.missingCount} missing)</em>
+                <span className="tagbar__stats">
+                  {t.costPct !== null && <>{t.costPct.toFixed(1)}% of spend · </>}
+                  {t.resourcePct.toFixed(1)}% of resources · {t.missingCount} missing
                 </span>
               </div>
               <div className="tagbar__track">
+                {t.costPct !== null && (
+                  <div className="tagbar__fill" style={{ width: `${Math.max(2, t.costPct)}%` }} />
+                )}
                 <div
-                  className="tagbar__fill"
-                  style={{ width: `${Math.max(2, t.costPct ?? t.resourcePct)}%` }}
+                  className="tagbar__fill tagbar__fill--resources"
+                  style={{ width: `${Math.max(2, t.resourcePct)}%` }}
                 />
               </div>
               {(t.soloRecoverableCost ?? 0) >= 1 && (
@@ -121,8 +185,20 @@ export default function Dashboard({ session, result, onBack, onReset, onExplore 
             </div>
           ))}
           <p className="hint">
-            {countOnly ? 'Resource-count coverage.' : 'Cost-weighted coverage — % of spend carrying each tag.'}
+            {countOnly
+              ? 'Resource coverage — share of resources carrying each tag.'
+              : 'Both views shown: share of spend and share of resources carrying each tag.'}
           </p>
+          {r.placeholders.length > 0 && (
+            <p className="placeholder-note">
+              <strong>Placeholder tag values treated as missing:</strong>{' '}
+              {r.placeholders.map((p) => `"${p.value}" (${p.occurrences})`).join(', ')} —{' '}
+              {r.placeholderOccurrenceCount.toLocaleString()} tag-value{' '}
+              {r.placeholderOccurrenceCount === 1 ? 'occurrence' : 'occurrences'} across{' '}
+              {r.placeholderResourceCount.toLocaleString()}{' '}
+              {r.placeholderResourceCount === 1 ? 'resource' : 'resources'}. These never count as coverage.
+            </p>
+          )}
         </div>
 
         {/* drift findings */}
@@ -192,18 +268,36 @@ export default function Dashboard({ session, result, onBack, onReset, onExplore 
         )}
       </div>
 
-      <div className="actions actions--sticky">
-        <button className="btn btn--ghost" onClick={onBack}>
-          ← Adjust mapping
+      {/* one row on mobile (≤640px) via .actions--toolbar; desktop unchanged.
+          Labels swap by CSS; aria-labels always carry the full meaning. */}
+      <div className="actions actions--sticky actions--toolbar">
+        <button className="btn btn--ghost" onClick={onBack} aria-label="Adjust column mapping">
+          <span className="label-full">← Adjust mapping</span>
+          <span className="label-short" aria-hidden="true">
+            Mapping
+          </span>
         </button>
-        <button className="btn btn--ghost" onClick={onReset}>
-          New file
+        <button className="btn btn--ghost" onClick={onReset} aria-label="Analyze a new file">
+          <span className="label-full">New file</span>
+          <span className="label-short" aria-hidden="true">
+            New
+          </span>
         </button>
-        <button className="btn" onClick={onExplore}>
-          View all resources ({r.analyzedResources.toLocaleString()})
+        <button
+          className="btn"
+          onClick={onExplore}
+          aria-label={`View all ${r.analyzedResources.toLocaleString()} resources`}
+        >
+          <span className="label-full">View all resources ({r.analyzedResources.toLocaleString()})</span>
+          <span className="label-short" aria-hidden="true">
+            Resources
+          </span>
         </button>
-        <button className="btn btn--primary" onClick={copyMarkdown}>
-          {copied ? 'Copied ✓' : 'Copy Markdown report'}
+        <button className="btn btn--primary" onClick={copyMarkdown} aria-label="Copy Markdown report">
+          <span className="label-full">{copied ? 'Copied ✓' : 'Copy Markdown report'}</span>
+          <span className="label-short" aria-hidden="true">
+            {copied ? 'Copied ✓' : 'Copy'}
+          </span>
         </button>
       </div>
     </section>
@@ -354,25 +448,56 @@ function DataQualityNotes({ r, skipped, money }: { r: AnalysisResult; skipped: n
 
 function buildMarkdown(fileName: string, r: AnalysisResult, money: MoneyContext): string {
   const lines: string[] = [];
-  const headline = r.costWeightedScore ?? r.resourceCountScore;
   lines.push(`# Allocation readiness report — ${fileName}`);
   lines.push('');
-  lines.push(`**Grade: ${r.grade}** (${GRADE_LABELS[r.grade]})`);
-  lines.push('');
-  lines.push(`- Allocation readiness score: **${headline.toFixed(1)}%**${r.costWeightedScore === null ? ' (resource-count basis; no cost data)' : ' of taggable spend fully allocatable'}`);
-  lines.push(`- Resources carrying all tracked mandatory tags: ${r.resourceCountScore.toFixed(1)}%`);
-  if (r.costWeightedScore !== null)
-    lines.push(`- Unallocated spend: **${money.fmt(r.unallocatedCost)}** of ${money.fmt(r.totalCost)}`);
-  lines.push(`- Resources analyzed: ${r.analyzedResources}`);
+  if (r.spendGrade && r.costWeightedScore !== null) {
+    lines.push(
+      `**Spend allocation: ${r.spendGrade}** (${SPEND_GRADE_LABELS[r.spendGrade]}) — ${r.costWeightedScore.toFixed(
+        1,
+      )}% of taggable spend is fully allocatable`,
+    );
+    lines.push(`- Unallocated spend: **${money.fmt(r.unallocatedCost)}** of ${money.fmt(r.totalCost)} taggable`);
+  }
+  lines.push(
+    `**Resource compliance: ${r.resourceGrade}** (${RESOURCE_GRADE_LABELS[r.resourceGrade]}) — ${r.resourceCountScore.toFixed(
+      1,
+    )}% of resources satisfy the complete tag policy`,
+  );
+  lines.push(
+    `- ${r.compliantResourceCount} of ${r.analyzedResources} resources compliant · ${r.nonCompliantResourceCount} non-compliant`,
+  );
   if (money.currency === null && r.costWeightedScore !== null)
     lines.push('- Currency was not provided; amounts are shown without a currency symbol.');
   lines.push('');
+  lines.push('_Spend allocation and resource compliance are graded independently — they answer different questions and are never combined into an overall grade._');
+  if (
+    r.costWeightedScore !== null &&
+    Math.abs(r.costWeightedScore - r.resourceCountScore) >= DIVERGENCE_THRESHOLD_POINTS
+  ) {
+    lines.push('');
+    lines.push(
+      r.costWeightedScore > r.resourceCountScore
+        ? `> **Coverage divergence:** ${r.costWeightedScore.toFixed(1)}% of spend is allocatable, but only ${r.resourceCountScore.toFixed(1)}% of resources comply. A small number of costly compliant resources may be masking broader tagging gaps.`
+        : `> **Coverage divergence:** ${r.resourceCountScore.toFixed(1)}% of resources comply, but only ${r.costWeightedScore.toFixed(1)}% of spend is allocatable. A smaller number of costly non-compliant resources is driving the allocation gap.`,
+    );
+  }
+  if (r.placeholders.length > 0) {
+    lines.push('');
+    lines.push(
+      `**Placeholder tag values treated as missing:** ${r.placeholders
+        .map((p) => `\`${p.value}\` (${p.occurrences})`)
+        .join(', ')} — tag-value occurrences in tracked dimensions; these never count as coverage.`,
+    );
+  }
+  lines.push('');
   lines.push('## Coverage per mandatory tag');
   lines.push('');
-  lines.push('| Tag | Coverage | Missing |');
-  lines.push('|---|---|---|');
+  lines.push('| Tag | Spend coverage | Resource coverage | Missing |');
+  lines.push('|---|---|---|---|');
   for (const t of r.perTag)
-    lines.push(`| ${t.label} | ${(t.costPct ?? t.resourcePct).toFixed(1)}% | ${t.missingCount} |`);
+    lines.push(
+      `| ${t.label} | ${t.costPct === null ? '—' : t.costPct.toFixed(1) + '%'} | ${t.resourcePct.toFixed(1)}% | ${t.missingCount} |`,
+    );
   if (r.drift.length > 0) {
     lines.push('');
     lines.push('## Drift findings');

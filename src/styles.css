@@ -605,6 +605,10 @@ main {
 .hero-colwrap {
   position: relative;
   width: 170px;
+  /* never squeeze columns to fit the viewport — the plane is meant to overflow
+     and be cropped by .hero-bg. Without this, narrow screens shrink each column
+     to a few dozen px and the chips become unreadable marks. */
+  flex: 0 0 170px;
   overflow: hidden;
 }
 
@@ -731,6 +735,33 @@ main {
   }
 }
 
+/* mobile: deliberate close-up crop — 2–3 readable columns, partial columns
+   bleeding past both edges. The plane keeps all 7 columns in the DOM so chip
+   content, animation timing and reduced-motion selection stay identical. */
+@media (max-width: 640px) {
+  .hero-persp {
+    /* recentre the crop on the middle columns and keep the beams in frame */
+    inset: -25% -25%;
+    perspective-origin: 50% 26%;
+  }
+
+  /* at ~1.9x the depth blur is magnified too — trim it so the mid/far columns
+     stay legible while keeping the depth hierarchy */
+  .hero-d2 {
+    filter: blur(0.8px);
+    opacity: 0.8;
+  }
+
+  .hero-d3 {
+    filter: blur(1.6px);
+    opacity: 0.55;
+  }
+}
+
+/* Central darkening keeps the headline readable; the edge shadow is kept
+   deliberately light so the overscanned columns stay visible as they run off
+   the sides. (To diagnose plane bounds vs. occlusion, disable this element in
+   DevTools — the raw crop becomes visible.) */
 .hero-vignette {
   position: absolute;
   inset: 0;
@@ -741,7 +772,7 @@ main {
     rgba(var(--vig), 0.15) 75%,
     transparent 100%
   );
-  box-shadow: inset 0 0 80px 40px var(--bg);
+  box-shadow: inset 0 0 60px 16px var(--bg);
   pointer-events: none;
   z-index: 1;
 }
@@ -899,11 +930,58 @@ h3 {
   bottom: 0;
   z-index: 4;
   margin-top: 24px;
-  padding: 14px 0;
+  padding: 14px 0 calc(14px + env(safe-area-inset-bottom, 0px));
   background: color-mix(in srgb, var(--bg) 80%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--border);
+}
+
+/* label swap: full text on desktop, compact on mobile */
+.label-short {
+  display: none;
+}
+
+/* mobile: one compact four-column row, never wrapping */
+@media (max-width: 640px) {
+  .actions--toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .actions--toolbar .btn {
+    min-height: 44px;
+    padding: 6px 4px;
+    font-size: 12.5px;
+    border-radius: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .actions--toolbar .label-full {
+    display: none;
+  }
+
+  .actions--toolbar .label-short {
+    display: inline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* very narrow phones (320px): shave type, keep one row and 44px targets */
+  @media (max-width: 360px) {
+    .actions--toolbar .btn {
+      font-size: 11.5px;
+      padding: 6px 2px;
+    }
+  }
 }
 
 /* custom combobox ---------------------------------------------------------- */
@@ -1144,16 +1222,74 @@ th.num {
 }
 
 /* dashboard --------------------------------------------------------------- */
+/* two independent grade cards of equal prominence */
+.grade-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.grade-pair--single {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 860px) {
+  .grade-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
 .score-card {
-  display: flex;
-  gap: 32px;
-  align-items: center;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px 32px;
-  margin-bottom: 20px;
+  padding: 24px 28px;
+}
+
+.score-card__title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 16px;
+}
+
+.score-card__body {
+  display: flex;
+  gap: 24px;
+  align-items: center;
   flex-wrap: wrap;
+}
+
+.divergence {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px;
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.divergence strong {
+  color: var(--warn);
+}
+
+.placeholder-note {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.placeholder-note strong {
+  color: var(--text);
 }
 
 .score-card__grade {
@@ -1196,7 +1332,7 @@ th.num {
 
 .score-card__metrics {
   display: flex;
-  gap: 40px;
+  gap: 28px;
   flex-wrap: wrap;
 }
 
@@ -1213,7 +1349,11 @@ th.num {
 }
 
 .metric--big .metric-value {
-  font-size: 38px;
+  font-size: 34px;
+}
+
+.metric--big .metric-label {
+  max-width: 30ch;
 }
 
 .metric--alert .metric-value {
@@ -1248,6 +1388,36 @@ th.num {
 }
 
 /* tag bars */
+.bar-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: -6px 0 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.bar-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bar-legend__swatch {
+  width: 14px;
+  height: 6px;
+  border-radius: 99px;
+  display: inline-block;
+}
+
+.bar-legend__swatch--spend {
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+}
+
+.bar-legend__swatch--resources {
+  background: linear-gradient(90deg, var(--text-faint), var(--text-dim));
+}
+
 .tagbar {
   margin-bottom: 16px;
 }
@@ -1260,18 +1430,30 @@ th.num {
 }
 
 .tagbar__track {
-  height: 6px;
-  border-radius: 99px;
-  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .tagbar__fill {
-  height: 100%;
+  height: 6px;
   border-radius: 99px;
   background: linear-gradient(90deg, var(--accent), var(--ok));
   transform-origin: left;
   animation: tagbar-grow 700ms var(--ease-enter) both;
+  min-width: 2px;
+}
+
+/* resource coverage rendered with equal weight, distinct hue */
+.tagbar__fill--resources {
+  background: linear-gradient(90deg, var(--text-faint), var(--text-dim));
+}
+
+.tagbar__stats {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
 }
 
 @keyframes tagbar-grow {

@@ -100,11 +100,24 @@ export default function Hero() {
     const root = rootRef.current;
     if (!root) return;
 
-    // dynamic zoom: the plane's natural width is ~1400px (7 columns); scale it
-    // to always overfill the viewport, capped so chips stay believable
+    // Zoom strategy. The plane's natural width is ~1346px (7 × 170px + gaps)
+    // and is always cropped by .hero-bg — never fitted to the viewport.
+    //
+    //   desktop (>640px): transform-based lateral overscan. The divisor and
+    //     floor are tuned so the plane bleeds ~15% past each viewport edge at
+    //     every width, so columns continue through the sides instead of ending
+    //     inside the frame. Overscan is preferred over adding columns: DOM
+    //     size, scan collision checks and animation cost stay constant.
+    //   mobile (≤640px): separate deliberate close-up — a few readable columns
+    //     with partial columns bleeding past both edges.
+    const MOBILE_BP = 640;
     const applyScale = () => {
-      const scale = Math.min(2.4, Math.max(1.2, root.clientWidth / 1200));
-      root.style.setProperty('--hero-scale', String(scale));
+      const w = root.clientWidth;
+      const scale =
+        w <= MOBILE_BP
+          ? Math.min(2.1, Math.max(1.75, w / 205)) // ≈1.90 at 390px
+          : Math.min(2.75, Math.max(1.38, w / 1040)); // ≈1.38 @1440, 1.85 @1920
+      root.style.setProperty('--hero-scale', String(Math.round(scale * 100) / 100));
     };
     applyScale();
     let raf = 0;

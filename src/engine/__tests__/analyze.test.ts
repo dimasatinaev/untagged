@@ -14,11 +14,14 @@ function run(csv: string) {
   return analyze(parsed, mapping, DEFAULT_POLICY);
 }
 
-test('fully tagged file scores 100 / grade A', () => {
+test('fully tagged file scores 100 / both grades A', () => {
   const r = run(`${HEADERS}\nr1,EC2,100,anna,payments,prod,CC-1\nr2,S3,50,tomas,search,dev,CC-2`);
   assert.equal(r.costWeightedScore, 100);
   assert.equal(r.resourceCountScore, 100);
-  assert.equal(r.grade, 'A');
+  assert.equal(r.spendGrade, 'A');
+  assert.equal(r.resourceGrade, 'A');
+  assert.equal(r.compliantResourceCount, 2);
+  assert.equal(r.nonCompliantResourceCount, 0);
   assert.equal(r.unallocatedCost, 0);
   assert.equal(r.offenders.length, 0);
 });
@@ -29,7 +32,9 @@ test('cost-weighted vs count scores differ correctly', () => {
   assert.equal(r.costWeightedScore, 90);
   assert.equal(r.resourceCountScore, 50);
   assert.equal(r.unallocatedCost, 100);
-  assert.equal(r.grade, 'B'); // headline = cost-weighted 90
+  // graded independently: spend B, resources D — no averaging, no capping
+  assert.equal(r.spendGrade, 'B');
+  assert.equal(r.resourceGrade, 'D');
 });
 
 test('null tokens count as missing', () => {
@@ -89,11 +94,12 @@ test('aggregation: tag from any line item counts; null token never overwrites re
   assert.equal(r.offenders.length, 0);
 });
 
-test('no cost column -> count-only mode', () => {
+test('no cost column -> resource grade only, spend grade null', () => {
   const r = run(`resource_id,owner,team,env,cost_center\nr1,anna,payments,prod,CC-1\nr2,,payments,prod,CC-1`);
   assert.equal(r.costWeightedScore, null);
+  assert.equal(r.spendGrade, null);
   assert.equal(r.resourceCountScore, 50);
-  assert.equal(r.grade, 'D'); // headline falls back to count score
+  assert.equal(r.resourceGrade, 'D');
 });
 
 test('unparseable costs counted, treated as zero', () => {
@@ -145,14 +151,18 @@ test('resource labeled by dominant-cost service, not first line item', () => {
   assert.equal(r.byService[0].totalCost, 107);
 });
 
-test('grade bands', () => {
+test('grade bands apply to the spend grade', () => {
   const mk = (compliantCost: number) =>
     run(`${HEADERS}\nok,EC2,${compliantCost},anna,payments,prod,CC-1\nbad,EC2,${100 - compliantCost},,,,`);
-  assert.equal(mk(96).grade, 'A');
-  assert.equal(mk(90).grade, 'B');
-  assert.equal(mk(75).grade, 'C');
-  assert.equal(mk(55).grade, 'D');
-  assert.equal(mk(30).grade, 'F');
+  assert.equal(mk(96).spendGrade, 'A');
+  assert.equal(mk(90).spendGrade, 'B');
+  assert.equal(mk(75).spendGrade, 'C');
+  assert.equal(mk(55).spendGrade, 'D');
+  assert.equal(mk(30).spendGrade, 'F');
+  // every one of those files is 1-of-2 compliant (50%) -> resource grade D,
+  // independent of how good or bad the spend grade is
+  assert.equal(mk(96).resourceGrade, 'D');
+  assert.equal(mk(30).resourceGrade, 'D');
 });
 
 test('demo dataset flows through full pipeline with expected characteristics', () => {

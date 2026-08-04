@@ -1,0 +1,6 @@
+resource_id,service,monthly_cost,currency,owner,team,env,cost_center
+db-expensive-untagged,RDS,4000.00,USD,,payments,prod,CC-1042
+i-0ok001,EC2,25.00,USD,anna.k,payments,prod,CC-1042
+i-0ok002,EC2,25.00,USD,anna.k,payments,prod,CC-1042
+i-0ok003,EC2,25.00,USD,eva.s,search,dev,CC-1043
+i-0ok004,EC2,25.00,USD,eva.s,search,dev,CC-1043
