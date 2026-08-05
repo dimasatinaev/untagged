@@ -13,6 +13,38 @@ Find the cloud spend missing required allocation tags. Drop in a cost export and
 
 Method informed by the [FinOps Foundation untagged-cost KPI playbook](https://www.finops.org/wg/percentage-of-costs-associated-with-untagged-csp-cloud-resources/) and extended for mandatory-tag policy compliance: the tool checks the *complete selected tag policy* (not only fully-untagged resources), values like `n/a`, `none`, `-` count as **missing**, untaggable charges (tax, credits, fees, RI/SP purchases) are excluded per the playbook's taggable-cost alternative formula, and the A–F grades are Untagged conventions, not official FinOps Foundation grades. Default mandatory tags (owner, team, environment, cost center) are common examples, not an industry standard.
 
+## Who this is for
+
+Untagged is for FinOps, platform, cloud engineering, and engineering operations teams that need a quick local check of whether cloud cost data is ready for allocation, showback, chargeback, or ownership cleanup.
+
+It is not a replacement for a FinOps platform. It is a small pre-flight auditor for tag coverage and allocation readiness.
+
+## Why two scores?
+
+Resource count and spend impact can tell very different stories.
+
+A file can have many well-tagged low-cost resources while a few expensive resources remain unallocatable — or the reverse, where a single costly compliant resource makes an otherwise unowned estate look healthy. Untagged keeps spend allocation and resource compliance separate so the report does not hide high-cost tagging gaps behind a good resource-count percentage, or vice versa.
+
+## What it does not do
+
+- Does not connect to AWS, Azure, or GCP accounts
+- Does not upload or store cost data
+- Does not forecast cloud spend
+- Does not detect EC2/EBS/NAT/Savings Plan optimization opportunities
+- Does not replace financial reporting or FinOps platform workflows
+- Does not claim official FinOps Foundation grading
+
+## Finding model
+
+Untagged treats report issues as structured findings rather than generic dashboard notes. Each finding carries the context needed to act on it, and today includes:
+
+- affected spend (per service, per resource, and per tag as *solo-recoverable* spend — what fixing one dimension alone would recover)
+- affected resources, ranked by cost, with the specific missing dimensions named
+- inconsistent tag keys and values, with the suggested consolidation
+- placeholder values, with exact occurrence and distinct-resource counts
+
+Explicit severity, confidence, and human-review flags are not yet modelled — findings are currently ranked by spend impact. Keeping issues structured rather than narrative is what makes a coverage gap convertible into a remediation backlog.
+
 ## Supported formats (tested)
 
 Regression-tested against fixtures in `samples/` and real exports:
@@ -78,11 +110,11 @@ Built for Cloudflare Pages (or any static host serving at a root domain — the 
 
 The CSP's `connect-src 'none'` is the enforceable form of the privacy promise: the deployed site cannot make network requests after load.
 
-## Status and limitations
+## Project status
 
-**Public beta** — live at https://untagged.pages.dev/
+Untagged is a complete public beta, live at https://untagged.pages.dev/. The current scope is intentionally narrow: local-first CSV analysis for tag coverage and allocation readiness. Future changes will be driven by practitioner feedback rather than a predefined roadmap.
 
-Known limitations: the resource explorer retains the top 5,000 resources by cost (disclosed on screen when truncated); mixed currencies are refused rather than converted; results are estimates — verify before financial reporting. Found a format that doesn't map? Open an issue with your CSV's header row.
+Known limitations: the resource explorer retains the top 5,000 resources by cost (disclosed on screen when truncated); mixed currencies are refused rather than converted; the four allocation dimensions can be remapped or disabled but user-defined dimensions are not yet supported; results are estimates — verify before financial reporting. Found a format that doesn't map? Open an issue with your CSV's header row (sanitized — never a real billing export).
 
 ## License
 
